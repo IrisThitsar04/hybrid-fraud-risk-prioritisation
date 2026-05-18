@@ -42,6 +42,14 @@ All fraud-labelled transactions are **fully preserved**, while the remaining row
 
 This sampling strategy retains all available fraud signal while maintaining representative non-fraud behaviour for supervised and unsupervised modelling.
 
+### Dataset Imbalance
+
+<p align="center">
+  <img src="images/dataset_imabalance.png" alt="Fraud Dataset Imbalance Overview" width="700">
+</p>
+
+Only approximately **0.13%** of transactions in the full dataset are fraudulent, while approximately **99.87%** are legitimate. In addition, only around **0.0003%** of transactions are explicitly flagged as fraud, suggesting that the available fraud flag captures only a very small subset of fraudulent transactions. This motivates a ranking-based approach rather than standard accuracy-based classification.
+
 ---
 
 ## Notebook Overview
@@ -70,6 +78,12 @@ Performance is further analysed at a **fixed 0.5% alert rate** to assess priorit
 
 The resulting risk scores form the **baseline ranking** for the subsequent hybrid prioritisation stage.
 
+<p align="center">
+  <img src="images/supervised_model_results.png" alt="Supervised LightGBM Fraud Risk Scoring Results" width="700">
+</p>
+
+LightGBM performed better than random ranking, but the low PR-AUC and modest ROC-AUC show limited fraud separability using transaction-level features alone. The precision-recall behaviour indicates that only a small number of fraud cases are clearly identifiable before precision drops toward the baseline fraud rate.
+
 ---
 
 ### 04_Unsupervised_Behaviour_Anomaly_Detection
@@ -85,12 +99,24 @@ These findings indicate that short time-windowed behavioural patterns provide a 
 
 The resulting account × day anomaly scores are saved and used as the behavioural input to the final hybrid prioritisation stage.
 
+<p align="center">
+  <img src="images/unsupervised_account_day.png" alt="Account-Day Behavioural Anomaly Results" width="700">
+</p>
+
+The account × day representation produced the strongest unsupervised results. Fraud was more concentrated among the highest-ranked behavioural windows, suggesting that suspicious activity is better captured through short time-windowed account behaviour than through individual transactions or full account-history aggregation.
+
 ---
 
 ### 05_Hybrid_Fraud_Prioritisation
 Implements the **final decision logic** by combining **supervised transaction-level risk scores** with **account × day behavioural anomaly scores**.
 
 The analysis shows that adding behavioural context reshapes transaction rankings and pushes more flagged fraud events to the top of the investigation list, improving prioritisation under limited review capacity.
+
+<p align="center">
+  <img src="images/hybrid_model_results.png" alt="Hybrid Fraud Prioritisation Results" width="700">
+</p>
+
+The hybrid ranking improved prioritisation at the top of the review list. In the Top-100 transactions, the fraud rate increased from **2%** under supervised scoring to **7%** under the hybrid approach, showing that behavioural anomaly context adds useful complementary information for identifying the most critical fraud cases.
 
 ---
 
@@ -115,6 +141,17 @@ Results are also examined at a **fixed alert rate (0.5%)**.
 Evaluation uses a mix of **fixed cut-offs** (Top-100, Top-500) and **size-based cut-offs** (top **0.1%**, **0.5%**, and **1%** of the dataset), where the alert count scales with dataset size.
 
 Across both approaches, evaluation focuses on **ranking quality and prioritisation effectiveness**, rather than accuracy-based classification metrics.
+
+---
+
+## Key Findings
+
+- The dataset shows extreme imbalance, with fraud representing only approximately **0.13%** of all transactions.
+- Transaction-level supervised scoring provides some prioritisation value, but fraud separability remains weak under severe class imbalance.
+- Unsupervised transaction-level anomaly detection performed poorly because individual transactions lacked enough behavioural context.
+- Account-level aggregation improved broader fraud concentration but diluted short-lived suspicious behaviour.
+- Account × day anomaly scoring provided the strongest behavioural representation by capturing short time-windowed fraud patterns.
+- The hybrid approach improved the highest-priority ranking results, increasing the Top-100 fraud rate from **2%** to **7%** compared with supervised scoring alone.
 
 ---
 
